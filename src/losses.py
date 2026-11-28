@@ -49,7 +49,15 @@ class SoftmaxWithLoss:
 
         검증: 모든 logits가 0이면 확률이 모두 1/10이므로 손실은 ln(10) = 2.3026 이 됩니다.
         """
+        logits_stable = logits - np.max(logits, axis=1, keepdims=True)  # 1) 수치 안정성
+        exp_logits = np.exp(logits_stable)
+        self.y_prob = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)  # 2) 확률 계산
+        self.y_true = y_true
         
+        batch_size = logits.shape[0]
+        correct_prob = self.y_prob[np.arange(batch_size), y_true]  # 정답 칸 확률만 뽑기
+        correct_prob = np.clip(correct_prob, 1e-7, 1.0)            # log(0) 방지
+        return -np.mean(np.log(correct_prob))                      # log, 부호 바꾸기, 평균
 
 
 
